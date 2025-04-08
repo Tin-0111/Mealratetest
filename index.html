@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>오늘의 급식</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      padding: 2rem;
+      background-color: #f7f7f7;
+    }
+    h1 {
+      color: #333;
+    }
+    #meal {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      white-space: pre-line;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1>오늘의 급식</h1>
+  <div id="meal">급식 정보를 불러오는 중...</div>
+
+  <script>
+    async function fetchMeal() {
+      // 오늘 날짜를 YYYYMMDD 형식으로 (서울 기준)
+      const today = new Date().toLocaleDateString('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).replace(/\. /g, '').replace('.', '');
+
+      const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=J10&SD_SCHUL_CODE=7530858&MLSV_YMD=${today}`;
+      console.log('요청 URL:', url); // 콘솔에서 확인 가능
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        const mealInfo = data.mealServiceDietInfo?.[1]?.row?.[0]?.DDISH_NM;
+
+        if (mealInfo) {
+          // <br/> 태그를 실제 줄바꿈으로 바꾸기
+          const mealFormatted = mealInfo.replace(/<br\/?>/g, '\n');
+          document.getElementById('meal').innerText = mealFormatted;
+        } else {
+          document.getElementById('meal').innerText = '오늘은 등록된 급식이 없습니다.';
+        }
+      } catch (error) {
+        console.error('급식 정보 가져오기 실패:', error);
+        document.getElementById('meal').innerText = '급식 정보를 불러오는 데 실패했습니다.';
+      }
+    }
+
+    fetchMeal();
+  </script>
+</body>
+</html>
