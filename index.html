@@ -99,6 +99,31 @@
         location.reload();
       });
 
+      const historyButton = document.getElementById('history-button');
+      const historySection = document.getElementById('history-section');
+      const historyList = document.getElementById('history-list');
+      historyButton?.addEventListener('click', async () => {
+        historyList.innerHTML = '불러오는 중...';
+        historySection.classList.remove('hidden');
+        const selectedSchool = JSON.parse(localStorage.getItem('selected-school'));
+        const schoolKey = `${selectedSchool.atpt}_${selectedSchool.code}`;
+        const historyRef = collection(db, `history-${schoolKey}`);
+        const historySnap = await getDocs(historyRef);
+        const items = [];
+        historySnap.forEach(doc => {
+          const { sum, count } = doc.data();
+          const avg = (sum / count).toFixed(1);
+          items.push(`<li>${doc.id}: ⭐ ${avg} (${count}명 참여)</li>`);
+        });
+        historyList.innerHTML = items.length ? items.join('') : '<li>아직 평가 기록이 없습니다.</li>';
+      });
+
+
+
+
+
+
+      
       async function fetchMealData() {
         const selectedSchool = JSON.parse(localStorage.getItem('selected-school') || '{}');
         const { atpt: eduCode, code: schoolCode } = selectedSchool;
@@ -236,6 +261,13 @@
     <div class="flex justify-between items-center mb-2">
       <h1 class="text-xl font-bold">오늘의 급식</h1>
       <button id="reset-school" class="text-sm text-blue-600 underline">학교 다시 선택</button>
+    </div>
+    <button id="history-button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl">
+      역대 평가 보기
+    </button>
+    <div id="history-section" class="hidden mt-4 bg-white p-4 rounded shadow">
+      <h2 class="text-lg font-bold mb-2">역대 평가</h2>
+      <ul id="history-list" class="list-disc list-inside text-sm text-gray-700"></ul>
     </div>
     <pre id="meal-box" class="bg-white p-4 rounded shadow whitespace-pre-wrap">불러오는 중...</pre>
     <button id="rate-button" class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl disabled:opacity-50">
