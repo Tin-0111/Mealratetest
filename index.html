@@ -104,12 +104,8 @@
           const mealInfo = data.mealServiceDietInfo?.[1]?.row?.[0]?.DDISH_NM;
 
           if (mealInfo) {
-            const mealFormatted = mealInfo
-              .replace(/<br\/?>/g, '\n')
-              .map(item => item.replace(/\s*\([^)]*\)/g, '').trim()) // 괄호 제거 + trim
-              .filter(Boolean) // 빈 문자열 제거
+            const mealFormatted = mealInfo.replace(/<br\/?>/g, '\n')
             mealBox.innerText = mealFormatted;
-            menus = mealFormatted.split('\n');
           } else {
             mealBox.innerText = '오늘은 등록된 급식이 없습니다.';
           }
