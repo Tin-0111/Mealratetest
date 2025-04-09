@@ -104,7 +104,9 @@
           const mealInfo = data.mealServiceDietInfo?.[1]?.row?.[0]?.DDISH_NM;
 
           if (mealInfo) {
-            const mealFormatted = mealInfo.replace(/<br\/?>/g, '\n')
+            const mealFormatted = mealInfo
+              .replace(/<br\/?>/g, '\n')
+              .replace(/\([\d.\s]*\)/g, '');
             mealBox.innerText = mealFormatted;
           } else {
             mealBox.innerText = '오늘은 등록된 급식이 없습니다.';
