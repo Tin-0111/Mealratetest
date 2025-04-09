@@ -2,127 +2,260 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>오늘의 급식 평점</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-    import {
-      getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, increment
-    } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mealrate</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyCuOQ3EYAMl5IRwNXhc4mcf9RgpoURnOgA",
-      authDomain: "mealrate-b757a.firebaseapp.com",
-      projectId: "mealrate-b757a",
-      storageBucket: "mealrate-b757a.appspot.com",
-      messagingSenderId: "427937261811",
-      appId: "1:427937261811:web:f70ced07ba5e41f9bcef86"
+      apiKey: "AIzaSyCmhAy-wN63vM3tGlrV4T1YwLSivDqSK7Y",
+      authDomain: "mealrate.firebaseapp.com",
+      projectId: "mealrate",
+      storageBucket: "mealrate.appspot.com",
+      messagingSenderId: "370437937940",
+      appId: "1:370437937940:web:29ebdfc814b0df2efc9a89"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-blue-50 min-h-screen flex flex-col items-center justify-start pt-10 px-4">
+  <div class="w-full max-w-md space-y-4">
+    
+    <!-- 학교 선택 UI -->
+    <div id="school-select-section" class="space-y-2">
+      <label class="block font-semibold text-sm">시도 선택</label>
+      <select id="province" class="w-full border p-2 rounded">
+        <option value="">시도를 선택하세요</option>
+      </select>
+
+      <label class="block font-semibold text-sm">지역 선택</label>
+      <select id="city" class="w-full border p-2 rounded" disabled>
+        <option value="">먼저 시도를 선택하세요</option>
+      </select>
+
+      <label class="block font-semibold text-sm">학교 이름</label>
+      <input id="school-name" type="text" class="w-full border p-2 rounded" placeholder="예: 서울고등학교" />
+
+      <button id="select-school-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-xl">
+        학교 선택 완료
+      </button>
+    </div>
+
+    <!-- 학교 변경 버튼 -->
+    <button id="change-school-btn" class="hidden w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-xl">
+      학교 변경
+    </button>
+
+    <!-- 급식 표시 박스 -->
+    <div id="meal-box" class="bg-white p-4 rounded-xl shadow hidden"></div>
+
+    <!-- 평가 버튼 -->
+    <button id="rate-button" class="hidden w-full bg-yellow-400 hover:bg-yellow-500 text-white font-bold py-2 px-4 rounded-xl">
+      별점 평가하기
+    </button>
+
+    <!-- 차트 토글 -->
+    <div class="flex justify-between hidden" id="chart-toggle">
+      <button id="show-today" class="bg-blue-400 text-white px-4 py-1 rounded">오늘</button>
+      <button id="show-history" class="bg-gray-400 text-white px-4 py-1 rounded">전체</button>
+    </div>
+
+    <!-- 차트 -->
+    <canvas id="rating-chart" class="bg-white rounded-xl p-2"></canvas>
+  </div>
+
+  <!-- JS 시작 -->
+  <script>
+    const provinceSelect = document.getElementById('province');
+    const citySelect = document.getElementById('city');
+    const schoolInput = document.getElementById('school-name');
+    const selectSchoolBtn = document.getElementById('select-school-btn');
+    const changeSchoolBtn = document.getElementById('change-school-btn');
+
+    const provinces = {
+      "서울특별시": "B10", "부산광역시": "C10", "대구광역시": "D10", "인천광역시": "E10",
+      "광주광역시": "F10", "대전광역시": "G10", "울산광역시": "H10", "세종특별자치시": "I10",
+      "경기도": "J10", "강원특별자치도": "K10", "충청북도": "M10", "충청남도": "N10",
+      "전북특별자치도": "P10", "전라남도": "Q10", "경상북도": "R10", "경상남도": "S10", "제주특별자치도": "T10"
     };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const userId = localStorage.getItem('meal-rating-id') || crypto.randomUUID();
-    localStorage.setItem('meal-rating-id', userId);
-
-    const mealBox = document.getElementById('meal-box');
-    const schoolBox = document.getElementById('school-box');
-    const regionBox = document.getElementById('region-box');
-    const changeSchoolBtn = document.getElementById('change-school');
-
-    const ATPT_CODES = {
-      '서울특별시': 'B10',
-      '부산광역시': 'C10',
-      '대구광역시': 'D10',
-      '인천광역시': 'E10',
-      '광주광역시': 'F10',
-      '대전광역시': 'G10',
-      '울산광역시': 'H10',
-      '세종특별자치시': 'I10',
-      '경기도': 'J10',
-      '강원도': 'K10',
-      '충청북도': 'M10',
-      '충청남도': 'N10',
-      '전라북도': 'P10',
-      '전라남도': 'Q10',
-      '경상북도': 'R10',
-      '경상남도': 'S10',
-      '제주특별자치도': 'T10'
-    };
-
-    async function selectSchoolFlow() {
-      const saved = JSON.parse(localStorage.getItem('school-info'));
-      if (saved) {
-        schoolBox.textContent = saved.schoolName;
-        await fetchMealData(saved);
-        return;
-      }
-      regionBox.classList.remove('hidden');
+    for (const name in provinces) {
+      const option = document.createElement('option');
+      option.value = provinces[name];
+      option.textContent = name;
+      provinceSelect.appendChild(option);
     }
 
-    document.getElementById('region-select-btn').addEventListener('click', async () => {
-      const region = document.getElementById('region').value;
-      const keyword = document.getElementById('school').value;
-      if (!region || !keyword) return alert('시도와 학교명을 입력해주세요');
-      const atptCode = ATPT_CODES[region];
-      const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=${atptCode}&SCHUL_NM=${encodeURIComponent(keyword)}`;
+    provinceSelect.addEventListener('change', async () => {
+      const code = provinceSelect.value;
+      citySelect.innerHTML = '<option value="">불러오는 중...</option>';
+      citySelect.disabled = true;
+
+      if (!code) return;
+
+      const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=${code}`;
       const res = await fetch(url);
       const data = await res.json();
-      const school = data.schoolInfo?.[1]?.row?.[0];
-      if (!school) return alert('학교를 찾을 수 없습니다');
-      const info = {
-        atpt: school.ATPT_OFCDC_SC_CODE,
-        code: school.SD_SCHUL_CODE,
-        schoolName: school.SCHUL_NM
-      };
-      localStorage.setItem('school-info', JSON.stringify(info));
-      schoolBox.textContent = info.schoolName;
-      regionBox.classList.add('hidden');
-      await fetchMealData(info);
+      const rows = data.schoolInfo?.[1]?.row || [];
+      const cities = [...new Set(rows.map(r => r.SDG_SC_NM))];
+
+      citySelect.innerHTML = '<option value="">지역을 선택하세요</option>';
+      cities.forEach(city => {
+        const option = document.createElement('option');
+        option.value = city;
+        option.textContent = city;
+        citySelect.appendChild(option);
+      });
+      citySelect.disabled = false;
     });
 
-    changeSchoolBtn.addEventListener('click', () => {
-      localStorage.removeItem('school-info');
+    selectSchoolBtn.addEventListener('click', async () => {
+      const provinceCode = provinceSelect.value;
+      const cityName = citySelect.value;
+      const schoolName = schoolInput.value.trim();
+      if (!provinceCode || !cityName || !schoolName) return alert("모든 정보를 입력해주세요.");
+
+      const url = `https://open.neis.go.kr/hub/schoolInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=${provinceCode}&SD_SCHUL_NM=${encodeURIComponent(schoolName)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const school = data.schoolInfo?.[1]?.row?.find(row => row.SDG_SC_NM === cityName);
+      if (!school) return alert('학교를 찾을 수 없습니다.');
+
+      localStorage.setItem('school-code', JSON.stringify({
+        atpt: school.ATPT_OFCDC_SC_CODE,
+        code: school.SD_SCHUL_CODE,
+        name: school.SCHUL_NM
+      }));
       location.reload();
     });
 
-    async function fetchMealData(info) {
-      const today = new Date().toLocaleDateString('ko-KR', {
-        timeZone: 'Asia/Seoul',
-        year: 'numeric', month: '2-digit', day: '2-digit'
-      }).replace(/\. /g, '').replace('.', '');
-      const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=${info.atpt}&SD_SCHUL_CODE=${info.code}&MLSV_YMD=${today}`;
-      try {
-        const res = await fetch(url);
-        const data = await res.json();
-        const meal = data.mealServiceDietInfo?.[1]?.row?.[0]?.DDISH_NM;
-        mealBox.textContent = meal ? meal.replace(/<br\/?/g, '\n') : '오늘은 등록된 급식이 없습니다';
-      } catch {
-        mealBox.textContent = '급식 정보를 불러오는 데 실패했습니다';
-      }
+    changeSchoolBtn.addEventListener('click', () => {
+      localStorage.removeItem('school-code');
+      location.reload();
+    });
+
+    const mealBox = document.getElementById('meal-box');
+    const rateBtn = document.getElementById('rate-button');
+    const chart = document.getElementById('rating-chart');
+    const showTodayBtn = document.getElementById('show-today');
+    const showHistoryBtn = document.getElementById('show-history');
+
+    async function fetchMealData() {
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const savedSchool = JSON.parse(localStorage.getItem('school-code'));
+      if (!savedSchool) return mealBox.innerText = '학교를 먼저 선택해주세요.';
+      const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=${savedSchool.atpt}&SD_SCHUL_CODE=${savedSchool.code}&MLSV_YMD=${today}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const meals = data.mealServiceDietInfo?.[1]?.row?.[0]?.DDISH_NM.split('<br/>').map(i => i.replace(/\([0-9.]*\)/g, '').trim()) || [];
+      return meals;
     }
 
-    window.onload = selectSchoolFlow;
-  </script>
-</head>
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
-  <div class="max-w-md w-full bg-white p-6 rounded-2xl shadow space-y-4">
-    <div class="flex justify-between items-center">
-      <h1 class="text-xl font-bold">오늘의 급식</h1>
-      <button id="change-school" class="text-sm text-blue-500 underline">학교 변경</button>
-    </div>
-    <div id="school-box" class="text-center font-semibold text-lg"></div>
-    <div id="meal-box" class="bg-gray-100 p-4 rounded-xl border text-center whitespace-pre-wrap">급식 정보를 불러오는 중...</div>
+    async function renderMeal() {
+      const mealItems = await fetchMealData();
+      mealBox.innerHTML = mealItems.map((item, i) => `<div><strong>${item}</strong> <span id="stars-${i}"></span></div>`).join('');
+      drawChart(mealItems);
+      rateBtn.onclick = () => rateMeal(mealItems);
+    }
 
-    <div id="region-box" class="hidden space-y-2">
-      <select id="region" class="w-full border rounded-xl p-2">
-        <option value="">시도 선택</option>
-        ${Object.keys(ATPT_CODES).map(r => `<option>${r}</option>`).join('')}
-      </select>
-      <input id="school" class="w-full border rounded-xl p-2" placeholder="학교명 입력">
-      <button id="region-select-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-xl">학교 선택</button>
-    </div>
-  </div>
+    async function rateMeal(mealItems) {
+      const now = new Date();
+      if (now.getHours() < 13) return alert("평가는 오후 1시부터 가능합니다.");
+      const ratings = [];
+      for (let i = 0; i < mealItems.length; i++) {
+        let rating = prompt(`${mealItems[i]} 별점 (1~5):`);
+        if (!rating) return;
+        rating = parseInt(rating);
+        if (rating < 1 || rating > 5) return alert("1~5 숫자만 입력해주세요.");
+        ratings.push(rating);
+      }
+
+      const date = new Date().toISOString().slice(0, 10);
+      const school = JSON.parse(localStorage.getItem('school-code')).code;
+      for (let i = 0; i < mealItems.length; i++) {
+        const ref = db.collection("ratings").doc(`${school}_${date}_${mealItems[i]}`);
+        await ref.set({ scores: firebase.firestore.FieldValue.arrayUnion(ratings[i]) }, { merge: true });
+
+        const hist = db.collection("ratings").doc(`${school}_ALL_${mealItems[i]}`);
+        await hist.set({ scores: firebase.firestore.FieldValue.arrayUnion(ratings[i]) }, { merge: true });
+      }
+
+      alert("평가가 저장되었습니다!");
+      drawChart(mealItems);
+    }
+
+    async function drawChart(mealItems) {
+      const date = new Date().toISOString().slice(0, 10);
+      const school = JSON.parse(localStorage.getItem('school-code')).code;
+
+      const todayData = await Promise.all(mealItems.map(async (item) => {
+        const doc = await db.collection("ratings").doc(`${school}_${date}_${item}`).get();
+        const scores = doc.data()?.scores || [];
+        const avg = scores.reduce((a, b) => a + b, 0) / (scores.length || 1);
+        return { item, avg: +avg.toFixed(2), count: scores.length };
+      }));
+
+      const allData = await Promise.all(mealItems.map(async (item) => {
+        const doc = await db.collection("ratings").doc(`${school}_ALL_${item}`).get();
+        const scores = doc.data()?.scores || [];
+        const avg = scores.reduce((a, b) => a + b, 0) / (scores.length || 1);
+        return { item, avg: +avg.toFixed(2), count: scores.length };
+      }));
+
+      const ctx = chart.getContext('2d');
+      if (window.myChart) window.myChart.destroy();
+      window.myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: mealItems,
+          datasets: [
+            {
+              label: '오늘',
+              data: todayData.map(d => d.avg),
+              backgroundColor: 'rgba(255, 206, 86, 0.7)'
+            },
+            {
+              label: '전체',
+              data: allData.map(d => d.avg),
+              backgroundColor: 'rgba(255, 99, 132, 0.5)'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, max: 5 }
+          }
+        }
+      });
+
+      mealItems.forEach((item, i) => {
+        document.getElementById(`stars-${i}`).innerHTML = `⭐ ${allData[i].avg} (${allData[i].count})`;
+      });
+    }
+
+    function init() {
+      const saved = localStorage.getItem('school-code');
+      if (!saved) {
+        document.getElementById('school-select-section').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('school-select-section').classList.add('hidden');
+      changeSchoolBtn.classList.remove('hidden');
+      mealBox.classList.remove('hidden');
+      rateBtn.classList.remove('hidden');
+      document.getElementById('chart-toggle').classList.remove('hidden');
+
+      renderMeal();
+    }
+
+    showTodayBtn.onclick = () => drawChart(fetchMealData());
+    showHistoryBtn.onclick = () => drawChart(fetchMealData());
+    init();
+  </script>
 </body>
 </html>
