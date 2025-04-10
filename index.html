@@ -307,16 +307,12 @@
           rateButton.textContent = '이미 평가하셨습니다';
         }
 
-      document.getElementById("cancelButton").addEventListener("click", () => {
+      document.getElementById("cancel-button").addEventListener("click", () => {
         // 필요한 동작 넣기: 평가 화면 닫기 등
         alert("평가를 취소했습니다.");
         // 예: 평가 입력 초기화하거나 UI를 숨기기
       });
-      document.getElementById("changeSchoolButton").addEventListener("click", () => {
-        localStorage.removeItem("schoolCode");
-        location.reload();
-      });
-
+        
         //시간
         //if (!canRate) {
           //rateButton.disabled = true;
@@ -339,7 +335,11 @@
   <div id="app-main">
     <div class="flex justify-between items-center mb-2">
       <h1 class="text-xl font-bold">오늘의 급식</h1>
-      <button id="reset-school" class="text-sm text-blue-600 underline">학교 다시 선택</button>
+      <div style="margin-top: 16px;">
+        <button id="reset-school" style="background-color: white; color: #333; border: 1px solid #ccc; padding: 8px 12px; border-radius: 6px;">
+          학교 다시 선택하기
+        </button>
+      </div>
     </div>
     <pre id="meal-box" class="bg-white p-4 rounded shadow whitespace-pre-wrap">불러오는 중...</pre>
     <button id="history-button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl">
@@ -368,8 +368,8 @@
         <div id="warning" class="text-red-500 text-sm h-4 mb-2"></div>
         <div class="flex justify-between">
           <div id="button-group" style="display: flex; gap: 8px; margin-top: 16px;">
-            <button id="prevButton">이전</button>
-            <button id="cancelButton" style="background-color: #ff4d4f; color: white; border: none; padding: 8px 12px; border-radius: 6px;">취소</button>
+            <button id="prev-button">이전</button>
+            <button id="cancel-button" style="background-color: #ff4d4f; color: white; border: none; padding: 8px 12px; border-radius: 6px;">취소</button>
           </div>
           <div class="flex gap-2">
             <button id="skip-button" class="bg-yellow-300 hover:bg-yellow-400 text-black font-semibold py-1 px-3 rounded-xl">건너뛰기</button>
