@@ -307,15 +307,15 @@
           rateButton.textContent = '이미 평가하셨습니다';
         }
 
-        document.getElementById("cancelButton").addEventListener("click", () => {
-          // 필요한 동작 넣기: 평가 화면 닫기 등
-          alert("평가를 취소했습니다.");
-          // 예: 평가 입력 초기화하거나 UI를 숨기기
-        });
-        document.getElementById("changeSchoolButton").addEventListener("click", () => {
-          localStorage.removeItem("schoolCode");
-          location.reload();
-        });
+      document.getElementById("cancelButton").addEventListener("click", () => {
+        // 필요한 동작 넣기: 평가 화면 닫기 등
+        alert("평가를 취소했습니다.");
+        // 예: 평가 입력 초기화하거나 UI를 숨기기
+      });
+      document.getElementById("changeSchoolButton").addEventListener("click", () => {
+        localStorage.removeItem("schoolCode");
+        location.reload();
+      });
 
         //시간
         //if (!canRate) {
