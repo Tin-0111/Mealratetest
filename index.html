@@ -109,13 +109,18 @@
         const schoolKey = `${selectedSchool.atpt}_${selectedSchool.code}`;
         const historyRef = collection(db, `history-${schoolKey}`);
         const historySnap = await getDocs(historyRef);
+        const todayMenus = new Set(menus);
         const items = [];
         historySnap.forEach(doc => {
-          const { sum, count } = doc.data();
-          const avg = (sum / count).toFixed(1);
-          items.push(`<li>${doc.id}: ⭐ ${avg} (${count}명 참여)</li>`);
+          if (todayMenus.has(doc.id)) {
+            const { sum, count } = doc.data();
+            const avg = (sum / count).toFixed(1);
+            items.push(`<li>${doc.id}: ⭐ ${avg} (${count}명 참여)</li>`);
+          }
         });
-        historyList.innerHTML = items.length ? items.join('') : '<li>아직 평가 기록이 없습니다.</li>';
+        historyList.innerHTML = items.length
+          ? items.join('')
+          : '<li>아직 평가 기록이 없습니다.</li>';
       });
 
       const todayRatingButton = document.getElementById('today-rating-button');
@@ -128,7 +133,6 @@
         const schoolKey = `${selectedSchool.atpt}_${selectedSchool.code}`;
         const todayRatingRef = collection(db, `ratings-${today}-${schoolKey}`);
         const snap = await getDocs(todayRatingRef);
-
         const allRatings = {};
         snap.forEach(doc => {
           const data = doc.data();
@@ -140,12 +144,10 @@
             allRatings[menu].count += 1;
           }
         });
-
         const items = Object.entries(allRatings).map(([menu, { sum, count }]) => {
           const avg = (sum / count).toFixed(1);
           return `<li>${menu}: ⭐ ${avg} (${count}명 참여)</li>`;
         });
-
         todayRatingList.innerHTML = items.length ? items.join('') : '<li>아직 오늘 평가가 없습니다.</li>';
       });
       
