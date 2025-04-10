@@ -308,6 +308,7 @@
         }
 
       document.getElementById("cancel-button").addEventListener("click", () => {
+        currentIndex = 0;
         document.getElementById("rating-section").classList.add("hidden");
         document.getElementById("meal-box").classList.remove("hidden");
         document.getElementById("rate-button").classList.remove("hidden");
