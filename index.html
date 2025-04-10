@@ -118,11 +118,36 @@
         historyList.innerHTML = items.length ? items.join('') : '<li>아직 평가 기록이 없습니다.</li>';
       });
 
+      const todayRatingButton = document.getElementById('today-rating-button');
+      const todayRatingSection = document.getElementById('today-rating-section');
+      const todayRatingList = document.getElementById('today-rating-list');
+      todayRatingButton?.addEventListener('click', async () => {
+        todayRatingList.innerHTML = '불러오는 중...';
+        todayRatingSection.classList.remove('hidden');
+        const selectedSchool = JSON.parse(localStorage.getItem('selected-school'));
+        const schoolKey = `${selectedSchool.atpt}_${selectedSchool.code}`;
+        const todayRatingRef = collection(db, `ratings-${today}-${schoolKey}`);
+        const snap = await getDocs(todayRatingRef);
 
+        const allRatings = {};
+        snap.forEach(doc => {
+          const data = doc.data();
+          for (const [menu, score] of Object.entries(data)) {
+            if (!allRatings[menu]) {
+             allRatings[menu] = { sum: 0, count: 0 };
+            }
+            allRatings[menu].sum += score;
+            allRatings[menu].count += 1;
+          }
+        });
 
+        const items = Object.entries(allRatings).map(([menu, { sum, count }]) => {
+          const avg = (sum / count).toFixed(1);
+          return `<li>${menu}: ⭐ ${avg} (${count}명 참여)</li>`;
+        });
 
-
-
+        todayRatingList.innerHTML = items.length ? items.join('') : '<li>아직 오늘 평가가 없습니다.</li>';
+      });
       
       async function fetchMealData() {
         const selectedSchool = JSON.parse(localStorage.getItem('selected-school') || '{}');
@@ -262,6 +287,7 @@
       <h1 class="text-xl font-bold">오늘의 급식</h1>
       <button id="reset-school" class="text-sm text-blue-600 underline">학교 다시 선택</button>
     </div>
+    <pre id="meal-box" class="bg-white p-4 rounded shadow whitespace-pre-wrap">불러오는 중...</pre>
     <button id="history-button" class="w-full mt-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-xl">
       역대 평가 보기
     </button>
@@ -269,7 +295,14 @@
       <h2 class="text-lg font-bold mb-2">역대 평가</h2>
       <ul id="history-list" class="list-disc list-inside text-sm text-gray-700"></ul>
     </div>
-    <pre id="meal-box" class="bg-white p-4 rounded shadow whitespace-pre-wrap">불러오는 중...</pre>
+    <button id="today-rating-button" class="w-full mt-2 bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-xl">
+      오늘 평가 다시보기
+    </button>
+    <div id="today-rating-section" class="hidden mt-4 bg-white p-4 rounded shadow">
+      <h2 class="text-lg font-bold mb-2">오늘의 평균 평가</h2>
+      <ul id="today-rating-list" class="list-disc list-inside text-sm text-gray-700"></ul>
+    </div>
+
     <button id="rate-button" class="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded-xl disabled:opacity-50">
       평가하기
     </button>
