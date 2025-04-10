@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
     import {
       getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, increment
     } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
@@ -22,14 +21,6 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-      signInAnonymously(auth)
-        .then(() => {
-          console.log('익명 로그인 성공');
-        })
-        .catch((error) => {
-          console.error('익명 로그인 실패:', error);
-        });
     const db = getFirestore(app);
 
     const userId = localStorage.getItem('meal-rating-id') || crypto.randomUUID();
