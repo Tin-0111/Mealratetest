@@ -261,31 +261,6 @@
         }
       });
 
-        
-        if (currentIndex < menus.length - 1) {
-          currentIndex++;
-          showMenu(currentIndex);
-        } else {
-          await setDoc(doc(db, `ratings-${today}-${schoolKey}`, userId), ratings);
-
-          for (const menu in ratings) {
-            const menuRef = doc(db, `history-${schoolKey}`, menu);
-            await updateDoc(menuRef, {
-              sum: increment(ratings[menu]),
-              count: increment(1)
-            }).catch(async () => {
-              await setDoc(menuRef, {
-                sum: ratings[menu],
-                count: 1
-              });
-            });
-          }
-
-          ratingSection.classList.add('hidden');
-          thankYou.classList.remove('hidden');
-        }
-      });
-
       homeButton.addEventListener('click', () => location.reload());
 
       async function init() {
