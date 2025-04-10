@@ -10,6 +10,17 @@
     import {
       getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, increment
     } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+    const auth = getAuth(app);
+    signInAnonymously(auth)
+      .then(() => {
+        const userId = auth.currentUser.uid;
+        localStorage.setItem('meal-rating-id', userId);
+      })
+      .catch(error => {
+        console.error('익명 로그인 실패:', error);
+      });
+
 
     //firebase연결
     const firebaseConfig = {
