@@ -313,7 +313,41 @@
         document.getElementById("meal-box").classList.remove("hidden");
         document.getElementById("rate-button").classList.remove("hidden");
       });
-        
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const mainPage = document.getElementById("main-page"); // 학교 검색
+        const mealPage = document.getElementById("meal-box");  // 급식
+        const ratingPage = document.getElementById("rating-section"); // 평가
+        function showPage(page) {
+          mainPage.classList.add("hidden");
+          mealPage.classList.add("hidden");
+          ratingPage.classList.add("hidden");
+          page.classList.remove("hidden");
+        }
+        function goToMealPage() {
+          showPage(mealPage);
+          history.pushState({ page: "meal" }, "Meal Page");
+        }
+        function goToRatingPage() {
+          showPage(ratingPage);
+          history.pushState({ page: "rating" }, "Rating Page");
+        }
+        window.addEventListener("popstate", (event) => {
+          const page = event.state?.page;
+          if (page === "meal") {
+            showPage(mealPage);
+          } else if (page === "rating") {
+            currentIndex = 0;
+            showPage(mealPage);
+          } else {
+            showPage(mainPage);
+          }
+        });
+
+  // 앱 시작할 때 기본 상태 추가
+  history.replaceState({ page: "search" }, "Search Page");
+});
+
         //시간
         //if (!canRate) {
           //rateButton.disabled = true;
