@@ -42,7 +42,7 @@
     const ratings = {};
     let currentIndex = 0;
 
-    //설정
+    //정의
     document.addEventListener('DOMContentLoaded', () => {
       const schoolSearchBox = document.getElementById('school-search-box');
       const schoolSearchInput = document.getElementById('school-input');
@@ -60,6 +60,12 @@
       const thankYou = document.getElementById('thank-you');
       const homeButton = document.getElementById('home-button');
       const schoolInfo = JSON.parse(localStorage.getItem('selected-school'));
+      const historyButton = document.getElementById('history-button');
+      const historySection = document.getElementById('history-section');
+      const historyList = document.getElementById('history-list');
+      const todayRatingButton = document.getElementById('today-rating-button');
+      const todayRatingSection = document.getElementById('today-rating-section');
+      const todayRatingList = document.getElementById('today-rating-list');
 
       if (!schoolInfo) {
         appMain?.classList.add('hidden');
