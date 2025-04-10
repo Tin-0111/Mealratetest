@@ -154,19 +154,15 @@
       async function fetchMealData() {
         const selectedSchool = JSON.parse(localStorage.getItem('selected-school') || '{}');
         const { atpt: eduCode, code: schoolCode } = selectedSchool;
-
         if (!eduCode || !schoolCode) {
           mealBox.innerText = '학교 정보가 없습니다. 다시 선택해주세요.';
           return;
         }
-
         const url = `https://open.neis.go.kr/hub/mealServiceDietInfo?KEY=12524cf433f544708e5fdec54b0ba13d&Type=json&ATPT_OFCDC_SC_CODE=${eduCode}&SD_SCHUL_CODE=${schoolCode}&MLSV_YMD=${today}`;
-
         try {
           const response = await fetch(url);
           const data = await response.json();
           const mealInfo = data.mealServiceDietInfo?.[1]?.row?.[0]?.DDISH_NM;
-
           if (mealInfo) {
             const mealFormatted = mealInfo.replace(/<br\/?>(\(\d+[.\d]*\))*/g, '\n').replace(/\([^)]*\)/g, '');
             mealBox.innerText = mealFormatted;
@@ -177,6 +173,26 @@
         } catch {
           mealBox.innerText = '급식 정보를 불러오는 데 실패했습니다.';
         }
+      }
+
+      async function submitRatings() {
+        const selectedSchool = JSON.parse(localStorage.getItem('selected-school'));
+        const schoolKey = `${selectedSchool.atpt}_${selectedSchool.code}`;
+        await setDoc(doc(db, `ratings-${today}-${schoolKey}`, userId), ratings);
+        for (const menu in ratings) {
+          const menuRef = doc(db, `history-${schoolKey}`, menu);
+          await updateDoc(menuRef, {
+            sum: increment(ratings[menu]),
+            count: increment(1)
+          }).catch(async () => {
+            await setDoc(menuRef, {
+              sum: ratings[menu],
+              count: 1
+            });
+          });
+        }
+        ratingSection.classList.add('hidden');
+        thankYou.classList.remove('hidden');
       }
 
       function showMenu(index) {
@@ -218,16 +234,34 @@
         }
       });
 
-      nextButton.addEventListener('click', async () => {
-        const selectedSchool = JSON.parse(localStorage.getItem('selected-school'));
-        const schoolKey = `${selectedSchool.atpt}_${selectedSchool.code}`;
+      const skipButton = document.getElementById('skip-button');
+      skipButton.addEventListener('click', () => {
         const currentMenu = menus[currentIndex];
+        delete ratings[currentMenu]; // 기록 제거
+        if (currentIndex < menus.length - 1) {
+          currentIndex++;
+          showMenu(currentIndex);
+        } else {
+          submitRatings();
+        }
+      });
 
+
+      nextButton.addEventListener('click', async () => {
+        const currentMenu = menus[currentIndex];
         if (!ratings[currentMenu]) {
           warning.textContent = '별점을 매겨주세요!';
           return;
         }
+        if (currentIndex < menus.length - 1) {
+          currentIndex++;
+          showMenu(currentIndex);
+        } else {
+          submitRatings();
+        }
+      });
 
+        
         if (currentIndex < menus.length - 1) {
           currentIndex++;
           showMenu(currentIndex);
@@ -316,7 +350,10 @@
         <div id="warning" class="text-red-500 text-sm h-4 mb-2"></div>
         <div class="flex justify-between">
           <button id="prev-button" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-1 px-3 rounded-xl">이전</button>
-          <button id="next-button" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded-xl">다음</button>
+          <div class="flex gap-2">
+            <button id="skip-button" class="bg-yellow-300 hover:bg-yellow-400 text-black font-semibold py-1 px-3 rounded-xl">건너뛰기</button>
+            <button id="next-button" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-1 px-3 rounded-xl">다음</button>
+          </div>
         </div>
       </div>
     </div>
